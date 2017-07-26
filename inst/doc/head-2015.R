@@ -57,7 +57,8 @@ head2015 = pdat %>% mutate(pvalue=p.value) %>%
   )) %>%
   select(pvalue,year,journal,field
          ,abstract,operator,doi,pmid) %>%
-  filter(!is.na(pvalue))
+  filter(!is.na(pvalue)) %>%
+  as_tibble()
 
 ## ----save_pvals----------------------------------------------------------
 use_data(head2015,overwrite=TRUE)

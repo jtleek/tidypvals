@@ -30,7 +30,8 @@ allp = allp %>% filter(!is.na(field)) %>%
   ungroup() %>%
   arrange(averagep) %>%
   mutate(field=factor(field,levels=unique(field))) %>%
-  filter(pvalue <= 1)
+  filter(pvalue <= 1) %>%
+  as_tibble()
 
 ## ------------------------------------------------------------------------
 ggplot(allp,aes(x = pvalue, y = field)) + geom_joy(bandwidth=0.01,fill="lightblue") + theme_joy(grid=FALSE)
