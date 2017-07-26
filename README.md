@@ -12,7 +12,7 @@ The `tidypvals` package organizes a large subset of these published p-values. Th
 This package will (hopefully) end up on Bioconductor soon, but for now you can install it with the devtools package
 
 ```S
-install.packages('devtools)
+install.packages('devtools')
 library(devtools)
 devtools::install_github('jtleek/tidypvals')
 ```
