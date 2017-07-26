@@ -1,0 +1,12 @@
+Package: tidypvals
+Title: This is a package with published p-values from the medical literature in tidied form. 
+Version: 0.1.0
+Authors@R: person("Jeff", "Leek", email = "jtleek@gmail.com", role = c("aut", "cre"))
+Description: This package collects and organizes published p-values that have previously been scraped by a number of authors. The p-values are tidied and organized so they can be easily used. The vignettes show how the p-values have been tidied from their original form. 
+Depends: R (>= 3.3.2)
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 6.0.1

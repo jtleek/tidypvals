@@ -1,0 +1,104 @@
+---
+title: "P-values from Brodeur et al. 2016 for the tidypvals package"
+author: "Jeff Leek"
+date: "`r BiocStyle::doc_date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Tutorial for swfdr package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+These p-values come from the paper: ["Star Wars: The Empirics strike back"](https://www.aeaweb.org/articles?id=10.1257/app.20150044) and were downloaded from the author's website [http://marcsangnier.free.fr/research_en.php](http://marcsangnier.free.fr/research_en.php) on 2017-07-23. The file that is downloaded from the site is called
+`brodeur_le_sangnier_zylberberg_replication.7z`. The file was unzipped and in the main directory there was a file called `final_stars_supp.dta`. This is where this vignette begins. 
+
+# Set up
+
+## Load packages
+
+```{r packages}
+library(foreign)
+library(devtools)
+library(dplyr)
+library(pryr)
+```
+
+## Load data
+
+First we load the p-value data using the foreign package
+
+```{r load_data, eval=FALSE}
+pdat = read.dta("final_stars_supp.dta")
+glimpse(pdat)
+```
+
+```{r load_data_hidden, echo=FALSE}
+pdat = read.dta("~/data/economics/final_stars_supp.dta")
+glimpse(pdat)
+```
+
+
+# Tidy p-values
+
+## Most of the p-values are NA
+
+```{r na_pvals}
+table(is.na(pdat$p_value_num))
+```
+
+## The t-statistic can be used instead
+
+Most of the t-statistics are observed
+
+```{r na_tstats}
+tstat_pvals = 2*(1-pnorm(pdat$t_stat_raw))
+table(is.na(tstat_pvals))
+```
+
+How do the two p-values compare? 
+
+```{r compare}
+quantile((tstat_pvals - pdat$p_value_num),na.rm=T)
+plot(tstat_pvals, pdat$p_value_num,pch=19)
+```
+
+Mostly they are right on the line, with a few exceptions. Let's look at those in specific:
+
+```{r nomatch}
+ind = which(abs(tstat_pvals - pdat$p_value_num) > 0.05)
+pdat[ind,] %>% select(journal_id,article_page,first_author)
+```
+
+All the p-values that don't match come from just two papers! Let's filter those out of the data set. 
+
+```{r}
+pdat = pdat[-ind,]
+```
+
+
+## Select the appropriate columns and clean
+
+```{r select}
+brodeur2016 = pdat %>% mutate(pvalue=2*(1-pnorm(t_stat_raw)),journal = journal_id) %>%
+  mutate(field="economics", abstract=FALSE) %>%
+  mutate(operator = NA, doi = NA, pmid=NA) %>%
+  select(pvalue,year,journal,field,
+         abstract,operator,doi,pmid) %>%
+  filter(!is.na(pvalue))
+```
+
+
+# Save data
+
+```{r save_pvals}
+use_data(brodeur2016,overwrite=TRUE)
+```
+
+
+# Session information
+
+
+```{r session_info}
+session_info()
+```
+

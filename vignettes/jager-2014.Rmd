@@ -1,0 +1,139 @@
+---
+title: "P-values from Jager et al. 2014 for the tidypvals package"
+author: "Jeff Leek"
+date: "`r BiocStyle::doc_date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Tutorial for swfdr package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+These p-values come from the paper: [An estimate of the science-wise false discovery rate and application to the top medical literature](https://academic.oup.com/biostatistics/article/15/1/1/244509/An-estimate-of-the-science-wise-false-discovery). The data were downloaded in the file `pvalueData.rda` from [https://github.com/jtleek/swfdr](https://github.com/jtleek/swfdr) on 2017-07-25. This is where the code starts. 
+
+# Set up
+
+## Load packages
+
+```{r packages}
+library(foreign)
+library(devtools)
+library(dplyr)
+library(pryr)
+library(readr)
+library(stringr)
+```
+
+## Load data
+
+First we load in the saved data. 
+
+```{r load_data, eval=FALSE}
+load("pvalueData.rda")
+journal = rownames(pvalueData)
+rownames(pvalueData) = NULL
+pdat = pvalueData %>% data.frame()
+pdat$journal = journal
+```
+
+```{r load_data_hidden, echo=FALSE}
+load("~/data/medicine/pvalueData.rda")
+journal = rownames(pvalueData)
+rownames(pvalueData) = NULL
+pdat = pvalueData %>% data.frame()
+pdat$journal = journal
+```
+
+
+We need to add DOIs for all for all of the papers so we can compare them to the Head 2015 and Chavalarias 2016 data set also included in this package. To do this we need to get data mapping Pubmed IDs to DOIs. We used the bulk data downloaded from NCBI here with that mapping information: [https://www.ncbi.nlm.nih.gov/pmc/pmctopmid/](https://www.ncbi.nlm.nih.gov/pmc/pmctopmid/). We downloaded the file `PMC-ids.csv.gz` on 2017-07-24. 
+
+We load the pubmed to DOI data:
+
+```{r pubmed_to_doi, eval=FALSE}
+pmids = read_csv("PMC-ids.csv")
+glimpse(pmids)
+```
+
+
+```{r pubmed_to_doi_hidden, echo=FALSE}
+pmids = read_csv("~/data/medicine/PMC-ids.csv")
+glimpse(pmids)
+```
+
+
+We can now merge by Pubmed ID
+
+```{r merge_ids}
+pmids$PMID = as.numeric(pmids$PMID)
+pdat$pubmedID = as.numeric(as.character(pdat$pubmedID))
+pdat = left_join(pdat,pmids,by=c("pubmedID"="PMID"))
+glimpse(pdat)
+```
+
+
+Note that most DOIs don't appear here because many of the papers are not in pubmed central. So we will leave the pubmed IDs for these papers
+
+```{r}
+mean(is.na(pdat$DOI))
+```
+
+Now we load in the journal category data (these come from Head et al. - see the associated vignette for more information) and merge the two together
+
+```{r load_journal_data , eval=FALSE}
+journals = read_csv("FILES_FOR_DRYAD/1. TEXT_MINING/raw_data/journal.categories.csv")
+glimpse(journals)
+```
+
+```{r load_journal_data_hidden, echo=FALSE}
+journals = read_csv("~/data/biology/FILES_FOR_DRYAD/1. TEXT_MINING/raw_data/journal.categories.csv")
+glimpse(journals)
+```
+
+
+We then assign the journals to two of the categories that seem the best fits. 
+
+```{r set_field}
+pdat = pdat %>% mutate(
+  field = case_when(
+    journal == "JAMA"  ~ "Medical And Health Sciences",
+    journal == "BMJ"  ~ "Medical And Health Sciences",
+    journal == "Lancet" ~ "Medical And Health Sciences",
+    journal == "American Journal of Epidemiology" ~ "Public Health And Health Services",
+    journal == "New England Journal of Medicine" ~ "Medical And Health Sciences" 
+  )
+)
+```
+
+
+# Tidy p-values
+
+ 
+## Select the appropriate columns and clean
+
+```{r select}
+jager2014 = pdat %>% mutate(abstract = TRUE) %>% 
+  mutate(pmid=pubmedID, doi=DOI) %>%
+  mutate(year = as.numeric(as.character(year))) %>%
+  mutate(
+    operator = case_when(
+     pvalueTruncated == 1 ~ "lessthan",
+     pvalueTruncated == 0 ~ "equals" 
+  )) %>%
+  select(pvalue,year,journal,field,
+         abstract,operator,doi, pmid)
+```
+
+
+# Save data
+
+```{r save_pvals}
+use_data(jager2014,overwrite=TRUE)
+```
+
+# Session information
+
+
+```{r session_info}
+session_info()
+```
+

@@ -1,0 +1,75 @@
+---
+title: "Merging and plotting the p-values"
+author: "Jeff Leek"
+date: "`r BiocStyle::doc_date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Tutorial for swfdr package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Load the packages that are needed
+
+```{r load_data}
+library(tidypvals)
+library(ggjoy)
+library(devtools)
+library(dplyr)
+library(ggplot2)
+```
+
+
+First we need to eliminate the common DOIs between `chavalarias2016` and `head2015`. To do this we need to take the p-values that are unique to `head2015` using an anti-join, then the p-values unique to `chavalarias2016` using a second anti-join, then the p-values that are common using a semi-join. Then merge those three data sets together. This is to avoid duplicated rows appearing twice in the merged data set. 
+
+```{r allpvals}
+aj1 = anti_join(head2015,chavalarias2016)
+aj2 = anti_join(chavalarias2016,head2015)
+sj1 = semi_join(head2015,chavalarias2016)
+allp = rbind(aj1,aj2,sj1)
+```
+
+Now we merge in the economics p-values
+
+```{r economics}
+allp = rbind(allp,brodeur2016)
+```
+
+
+```{r economics_save_hidden, echo=FALSE}
+use_data(allp,overwrite=TRUE)
+```
+
+Next we filter out the p-values corresponding to less descriptive fields and order in a way that makes the p-value histograms descending. 
+
+```{r filter_out_fields}
+modefunc = function(x){
+  d = density(x)
+  return(d$x[which.max(d$y)])
+}
+allp = allp %>% filter(!is.na(field)) %>%
+  filter(field != "Multidisciplinary") %>%
+  filter(field != "Other") %>%
+  group_by(field) %>% 
+  mutate(averagep = modefunc(pvalue)) %>%
+  ungroup() %>%
+  arrange(averagep) %>%
+  mutate(field=factor(field,levels=unique(field))) %>%
+  filter(pvalue <= 1)
+```
+
+
+Now we can make a [joyplot](https://cran.r-project.org/web/packages/ggjoy/vignettes/introduction.html) of the p-values across different fields. 
+
+```{r}
+ggplot(allp,aes(x = pvalue, y = field)) + geom_joy(bandwidth=0.01,fill="lightblue") + theme_joy(grid=FALSE)
+```
+
+# Session information
+
+
+```{r session_info}
+session_info()
+```
+
+

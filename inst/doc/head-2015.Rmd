@@ -1,0 +1,136 @@
+---
+title: "P-values from Head et al. 2015 for the tidypvals package"
+author: "Jeff Leek"
+date: "`r BiocStyle::doc_date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Tutorial for swfdr package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+These p-values come from the paper: [The extent and consequences of p-hacking in science](http://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1002106) and were downloaded from Dryad [http://datadryad.org/resource/doi:10.5061/dryad.79d43](http://datadryad.org/resource/doi:10.5061/dryad.79d43) on 2017-07-24. The file that is downloaded from the site is called
+`FILES_FOR_DRYAD.zip`. The file was unzipped and this where the vignette begins. 
+
+# Set up
+
+## Load packages
+
+```{r packages}
+library(foreign)
+library(devtools)
+library(dplyr)
+library(pryr)
+library(readr)
+```
+
+## Load data
+
+First we load the p-value data using the foreign package
+
+```{r load_data, eval=FALSE}
+pdat = read_csv("FILES_FOR_DRYAD/1. TEXT_MINING/raw_data/p.values.csv")
+glimpse(pdat)
+```
+
+```{r load_data_hidden, echo=FALSE}
+pdat = read_csv("~/data/biology/FILES_FOR_DRYAD/1. TEXT_MINING/raw_data/p.values.csv")
+glimpse(pdat)
+```
+
+Now we load in the journal category data and merge the two together
+
+```{r load_journal_data , eval=FALSE}
+journals = read_csv("FILES_FOR_DRYAD/1. TEXT_MINING/raw_data/journal.categories.csv")
+glimpse(journals)
+```
+
+```{r load_journal_data_hidden, echo=FALSE}
+journals = read_csv("~/data/biology/FILES_FOR_DRYAD/1. TEXT_MINING/raw_data/journal.categories.csv")
+glimpse(journals)
+```
+
+
+Merge the two data sets together. It appears that the journal abbreviation is the better choice for matching here and that using either of the two is little improvement over just using the abbreviation. 
+
+```{r}
+mean(pdat$journal.name %in% journals$Title)
+mean(pdat$journal.name %in% journals$Abbreviation)
+mean(pdat$journal.name %in% journals$Abbreviation | pdat$journal.name %in% journals$Title)
+```
+
+
+So we merge on Abbreviation
+
+```{r merge}
+pdat = left_join(pdat,journals,by=c("journal.name"="Abbreviation"))
+```
+
+
+## Add Pubmed IDs when we have them
+
+We load the pubmed to DOI data:
+
+```{r pubmed_to_doi, eval=FALSE}
+pmids = read_csv("PMC-ids.csv")
+glimpse(pmids)
+```
+
+
+```{r pubmed_to_doi_hidden, echo=FALSE}
+pmids = read_csv("~/data/medicine/PMC-ids.csv")
+glimpse(pmids)
+```
+
+
+Merge them together 
+
+```{r merge_pmids}
+mm = match(pdat$first.doi,pmids$DOI)
+pdat = cbind(pdat,pmids[mm,])
+```
+
+
+# Tidy p-values
+
+
+## A number of the p-values are NA
+
+```{r pvals_na}
+table(is.na(pdat$p.value))
+```
+
+ 
+ 
+## Select the appropriate columns and clean
+
+```{r select}
+head2015 = pdat %>% mutate(pvalue=p.value) %>%
+  mutate(journal = journal.name,pmid=PMID) %>%
+  mutate(abstract=(section=="abstract"), doi=first.doi) %>%
+  mutate(field=Category) %>%
+  mutate(
+    operator = case_when(
+     operator == "<" | operator == "≤" ~ "lessthan",
+     operator == "=" ~ "equals" ,
+     operator == ">" | operator == "≥" ~ "greaterthan"
+  )) %>%
+  select(pvalue,year,journal,field
+         ,abstract,operator,doi,pmid) %>%
+  filter(!is.na(pvalue))
+```
+
+
+# Save data
+
+```{r save_pvals}
+use_data(head2015,overwrite=TRUE)
+```
+
+# Session information
+
+
+```{r session_info}
+session_info()
+```
+
