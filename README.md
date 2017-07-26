@@ -14,7 +14,7 @@ This package will (hopefully) end up on Bioconductor soon, but for now you can i
 ```S
 install.packages('devtools)
 library(devtools)
-devtools::install_github('jtleek/slipper')
+devtools::install_github('jtleek/tidypvals')
 ```
 
 ### description
@@ -25,6 +25,7 @@ The currently available p-value data sets in this package are:
 * `brodeur2016` - This data set comes from the paper [Star Wars: The empirics strike back](https://www.aeaweb.org/articles?id=10.1257/app.20150044) which collected p-values from the economics literature.
 * `head2015` - This data set comes from the paper [The Extent and Consequences of P-Hacking in Science](http://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1002106) and is an extension of the `jager2014` idea to a much larger collection of biological papers. 
 * `chavalarias2016` - This data set comes from the paper [Evolution of Reporting P Values in the Biomedical Literature, 1990-2015](https://jamanetwork.com/journals/jama/fullarticle/10.1001/jama.2016.1952) and is an extension of the `jager2014` idea to a much larger collection of medical papers. 
+* `allp` - merges the `head2015`, `chavalarias2016`, and `brodeur2016` while removing duplicates. To see how it is created view the `merging` vignette. 
 
 
 Each data set is "tidy" data frame and has the following columns: 

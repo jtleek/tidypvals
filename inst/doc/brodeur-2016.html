@@ -326,7 +326,7 @@ pdat[ind,] %&gt;% select(journal_id,article_page,first_author)</code></pre>
 <div id="select-the-appropriate-columns-and-clean" class="section level2">
 <h2><span class="header-section-number">2.3</span> Select the appropriate columns and clean</h2>
 <pre class="r"><code>brodeur2016 = pdat %&gt;% mutate(pvalue=2*(1-pnorm(t_stat_raw)),journal = journal_id) %&gt;%
-  mutate(field=&quot;economics&quot;, abstract=FALSE) %&gt;%
+  mutate(field=&quot;Economics&quot;, abstract=FALSE) %&gt;%
   mutate(operator = NA, doi = NA, pmid=NA) %&gt;%
   select(pvalue,year,journal,field,
          abstract,operator,doi,pmid) %&gt;%
