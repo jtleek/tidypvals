@@ -66,7 +66,8 @@ jager2014 = pdat %>% mutate(abstract = TRUE) %>%
      pvalueTruncated == 0 ~ "equals" 
   )) %>%
   select(pvalue,year,journal,field,
-         abstract,operator,doi, pmid)
+         abstract,operator,doi, pmid) %>%
+  as_tibble()
 
 ## ----save_pvals----------------------------------------------------------
 use_data(jager2014,overwrite=TRUE)

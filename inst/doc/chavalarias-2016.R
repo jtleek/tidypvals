@@ -89,7 +89,8 @@ chavalarias2016 = pdat %>% mutate(journal = `Journal Title`)%>%
   )) %>%
   select(pvalue,year,journal,field,
          abstract,operator,doi,pmid) %>%
-  filter(!is.na(pvalue))
+  filter(!is.na(pvalue)) %>%
+  as_tibble()
 
 ## ----save_pvals----------------------------------------------------------
 use_data(chavalarias2016,overwrite=TRUE)

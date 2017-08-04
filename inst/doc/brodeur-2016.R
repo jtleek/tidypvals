@@ -36,7 +36,8 @@ brodeur2016 = pdat %>% mutate(pvalue=2*(1-pnorm(t_stat_raw)),journal = journal_i
   mutate(operator = NA, doi = NA, pmid=NA) %>%
   select(pvalue,year,journal,field,
          abstract,operator,doi,pmid) %>%
-  filter(!is.na(pvalue))
+  filter(!is.na(pvalue)) %>%
+  as_tibble()
 
 ## ----save_pvals----------------------------------------------------------
 use_data(brodeur2016,overwrite=TRUE)
